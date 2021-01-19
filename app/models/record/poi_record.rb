@@ -100,7 +100,6 @@ class PoiRecord < Record
     # @return [Boolean] true wenn der Eintrag valide ist
     def record_valid?(xml_poi, location)
       return false unless xml_poi.attributes["language"].text == "de"
-      # return false if !options[:districts].include?(location[:district]) && !options[:departments].include?(location[:department])
 
       true
     end
