@@ -277,7 +277,7 @@ DEPENDENCIES
   nokogiri
   pg (>= 0.18, < 2.0)
   puma (~> 3.11)
-  rails (~> 6.0.0.rc1)
+  rails (~> 6.0.3.2)
   rails-controller-testing
   rb-readline
   rspec-rails
