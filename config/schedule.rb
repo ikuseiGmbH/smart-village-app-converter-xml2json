@@ -21,9 +21,25 @@ set :output, "/var/log/cron.log"
 set :job_template, "/bin/sh -l -c ':job'"
 set :environment, ENV["RAILS_ENV"]
 
-every 1.day do
-  runner "Importer.new(:poi)"
-  runner "Importer.new(:event)"
+every 1.day, at: "00:05 am" do
+  runner "Importer.load_data(:poi)"
+end
+
+every 1.day, at: "00:30 am" do
+  runner "Importer.load_data(:event)"
+end
+
+every 1.day, at: "01:05 am" do
+  runner "Importer.parse_data(:poi)"
+end
+
+every 1.day, at: "03:05 am" do
+  runner "Importer.parse_data(:event)"
+end
+
+every 1.day, at: "05:05 am" do
+  runner "Importer.send_data(:poi)"
+  runner "Importer.send_data(:event)"
 end
 
 # Learn more: http://github.com/javan/whenever

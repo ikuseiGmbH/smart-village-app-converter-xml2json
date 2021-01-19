@@ -1,6 +1,4 @@
 class Record < ApplicationRecord
-  audited only: :updated_at
-
   def load_xml_data
     raise "Abstract Method"
   end
@@ -23,6 +21,18 @@ class Record < ApplicationRecord
   def is_true?(value)
     [1, true, '1', 'true', 't'].include?(value)
   end
+
+  def select_target_servers(location, potential_target_servers)
+    p "#{location[:district]}, #{location[:department]}, #{location[:departments]}"
+
+    selected_servers = potential_target_servers.select { |_server_name, options|
+      options[:districts].include?(location[:district].to_s.strip) ||
+        options[:departments].include?(location[:department].to_s.strip) ||
+        options[:departments].include?(location[:departments].to_s.strip)
+    }
+    selected_servers.try(:keys)
+  end
+
 end
 
 # == Schema Information

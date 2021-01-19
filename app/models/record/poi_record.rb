@@ -16,30 +16,34 @@ class PoiRecord < Record
     return unless result.body.present?
 
     self.xml_data = result.body
+    self.save
   end
 
-  # Parse XML Data and converts it to a Hash
-  #
-  # @return [Hash] Hash of point of interests
-  def convert_xml_to_hash(name, options)
-    poi_data = []
-    tour_data = []
-
+  def parse_data
     @xml_doc = Nokogiri.XML(xml_data)
     @xml_doc.remove_namespaces!
     @base_file_url = @xml_doc.at_xpath("/result/@fileUrl").try(:value)
+    potential_target_servers = Rails.application.credentials.target_servers
+
     @xml_doc.xpath("/result/poi").each do |xml_poi|
       location = parse_location(xml_poi)
-      next unless record_valid?(xml_poi, location, options)
+      next unless record_valid?(xml_poi, location)
+
+      matching_target_servers = select_target_servers(location, potential_target_servers)
+      next if matching_target_servers.blank?
 
       if xml_poi.xpath("tours/tour").present?
-        tour_data << parse_single_tour_from_xml(xml_poi, location)
+        data_to_store =  { tours: [parse_single_tour_from_xml(xml_poi, location)] }
       else
-        poi_data << parse_single_poi_from_xml(xml_poi, location)
+        data_to_store = { point_of_interests: [parse_single_poi_from_xml(xml_poi, location)] }
+      end
+
+      matching_target_servers.each do |target_server|
+        CommunityRecord.create(title: target_server, data_type: "poi", json_data: data_to_store)
       end
     end
 
-    { point_of_interests: poi_data, tours: tour_data }
+    true
   end
 
   def parse_single_poi_from_xml(poi, location)
@@ -94,9 +98,9 @@ class PoiRecord < Record
     # @param [Nokogiri::Node] xml_poi Ein Knoten im XML Dokument
     #
     # @return [Boolean] true wenn der Eintrag valide ist
-    def record_valid?(xml_poi, location, options)
+    def record_valid?(xml_poi, location)
       return false unless xml_poi.attributes["language"].text == "de"
-      return false if !options[:districts].include?(location[:district]) && !options[:departments].include?(location[:department])
+      # return false if !options[:districts].include?(location[:district]) && !options[:departments].include?(location[:department])
 
       true
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_13_112517) do
+ActiveRecord::Schema.define(version: 2021_01_14_162144) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -37,11 +37,18 @@ ActiveRecord::Schema.define(version: 2019_05_13_112517) do
     t.index ["user_id", "user_type"], name: "user_index"
   end
 
+  create_table "community_records", force: :cascade do |t|
+    t.string "title"
+    t.string "data_type"
+    t.text "json_data"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "records", force: :cascade do |t|
     t.string "external_id"
     t.jsonb "json_data"
     t.text "xml_data"
-    t.string "type", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end

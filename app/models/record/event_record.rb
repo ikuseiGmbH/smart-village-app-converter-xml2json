@@ -14,6 +14,27 @@ class EventRecord < Record
     return unless result.body.present?
 
     self.xml_data = result.body
+    self.save
+  end
+
+  def parse_data
+    @xml_doc = Nokogiri.XML(xml_data)
+    @xml_doc.remove_namespaces!
+    potential_target_servers = Rails.application.credentials.target_servers
+
+    @xml_doc.xpath("/brandenburgevents/EVENT").each do |xml_event|
+      location = parse_location(xml_event)
+
+      matching_target_servers = select_target_servers(location, potential_target_servers)
+      next if matching_target_servers.blank?
+
+      data_to_store = { events: [parse_single_event_from_xml(xml_event, location)] }
+      matching_target_servers.each do |target_server|
+        CommunityRecord.create(title: target_server, data_type: "event", json_data: data_to_store)
+      end
+    end
+
+    true
   end
 
   # Parse XML Data and converts it to a Hash
@@ -33,7 +54,7 @@ class EventRecord < Record
     { events: event_data }
   end
 
-  def parse_single_event_from_xml(event)
+  def parse_single_event_from_xml(event, location)
     event_data = {
       title: event.at_xpath("E_TITEL").try(:text),
       external_id: event.at_xpath("E_ID").try(:text),
@@ -163,7 +184,6 @@ class EventRecord < Record
   end
 
   def parse_location(event)
-    byebug
     {
       region_name: event.at_xpath("REGION_NAME_D").try(:text),
       departments: event.at_xpath("TMBORTE_NAME").try(:text),
